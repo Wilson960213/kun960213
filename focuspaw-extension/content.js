@@ -498,23 +498,62 @@ catUI.catEl.addEventListener('dblclick', () => {
 
   // === 控制面板按钮事件在 CatUI.createPanel 中直接绑定 ===
 
+  // === 闹铃音效（Web Audio API） ===
+  let lastRingTime = 0;
+
+  function playAlarmSound() {
+    // 2 秒内不重复响铃（防止本地和 background 双重触发）
+    if (Date.now() - lastRingTime < 2000) return;
+    lastRingTime = Date.now();
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      // 确保 AudioContext 处于运行状态（后台标签页可能被挂起）
+      ctx.resume();
+      const now = ctx.currentTime;
+      for (let i = 0; i < 6; i++) {
+        playTone(ctx, 800, now + i * 0.25, 0.1);
+        playTone(ctx, 1000, now + i * 0.25 + 0.12, 0.1);
+      }
+      setTimeout(() => ctx.close(), 3000);
+    } catch (_) { /* 静默失败 */ }
+  }
+  function playTone(ctx, freq, start, duration) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.3, start);
+    gain.gain.exponentialRampToValueAtTime(0.01, start + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.01);
+  }
+
   // === 监听 background 消息 ===
   chrome.runtime.onMessage.addListener((msg) => {
     switch (msg.action) {
       case 'timerStarted':
         catUI.showPanel();
         catUI.updateTimerDisplay(msg.duration);
+        timerEnd = msg.endTime;
         startTimerTick();
+        scheduleLocalRing(timerEnd);
         break;
       case 'timerCancelled':
         catUI.updateTimerDisplay(null);
         stopTimerTick();
+        cancelLocalRing();
+        timerEnd = 0;
         break;
       case 'timerComplete':
         catUI.updateTimerDisplay(0);
         stopTimerTick();
+        cancelLocalRing();
+        timerEnd = 0;
         catUI.showBubble('⏱ 时间到！休息一下吧～ 🎉', 6000);
         catUI.showEffect('🎉');
+        playAlarmSound();
         break;
       case 'timerUpdate':
         catUI.updateTimerDisplay(msg.remaining);
@@ -530,13 +569,37 @@ catUI.catEl.addEventListener('dblclick', () => {
         catUI.showBubble('⏰ 叮叮叮～闹钟响啦！', 6000);
         catUI.showEffect('🔔');
         catUI.updateAlarmStatus('');
+        playAlarmSound();
         break;
     }
   });
 
-  // === 计时器本地刷新（显示剩余时间） ===
+  // === 本地精准响铃（setTimeout，0延迟） ===
   let timerTickInterval = null;
+  let timerEnd = 0;
+  let localRingTimer = null;
 
+  function scheduleLocalRing(endTime) {
+    cancelLocalRing();
+    const delay = Math.max(0, endTime - Date.now());
+    localRingTimer = setTimeout(() => {
+      timerEnd = 0;
+      stopTimerTick();
+      catUI.updateTimerDisplay(0);
+      catUI.showBubble('⏱ 时间到！休息一下吧～ 🎉', 6000);
+      catUI.showEffect('🎉');
+      playAlarmSound();
+    }, delay);
+  }
+
+  function cancelLocalRing() {
+    if (localRingTimer) {
+      clearTimeout(localRingTimer);
+      localRingTimer = null;
+    }
+  }
+
+  // 轮询仅用于显示剩余时间（每秒更新）
   function startTimerTick() {
     stopTimerTick();
     timerTickInterval = setInterval(() => {
@@ -558,11 +621,36 @@ catUI.catEl.addEventListener('dblclick', () => {
     }
   }
 
+  // === visibilitychange：切回标签页时重新同步计时器 ===
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    // 从 background 查询最新的计时器状态
+    chrome.runtime.sendMessage({ action: 'getTimerStatus' }, (status) => {
+      if (status && status.running) {
+        timerEnd = status.endTime;
+        catUI.updateTimerDisplay(status.remaining);
+        startTimerTick();
+        scheduleLocalRing(timerEnd);
+      } else if (timerEnd > 0) {
+        // 计时器已过期但本地还未响铃 → 立即响铃
+        timerEnd = 0;
+        stopTimerTick();
+        cancelLocalRing();
+        catUI.updateTimerDisplay(0);
+        catUI.showBubble('⏱ 时间到！休息一下吧～ 🎉', 6000);
+        catUI.showEffect('🎉');
+        playAlarmSound();
+      }
+    });
+  });
+
   // === 初始化时查询是否有计时器在运行（跨 tab 同步） ===
   chrome.runtime.sendMessage({ action: 'getTimerStatus' }, (status) => {
     if (status && status.running) {
       catUI.updateTimerDisplay(status.remaining);
+      timerEnd = status.endTime;
       startTimerTick();
+      scheduleLocalRing(timerEnd);
     }
   });
 
