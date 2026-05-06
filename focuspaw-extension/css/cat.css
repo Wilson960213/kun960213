@@ -1,0 +1,167 @@
+#focuspaw-cat {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  width: 256px;
+  height: 256px;
+  z-index: 2147483647;
+  cursor: pointer;
+  user-select: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  /* 优化动画丝滑过渡 */
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: auto;
+}
+
+.cat-bubble {
+  position: absolute;
+  bottom: 280px;
+  right: 0;
+  background: white;
+  border: 2px solid #ffb6c1;
+  border-radius: 15px;
+  padding: 10px 15px;
+  max-width: 200px;
+  font-size: 14px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  z-index: 2147483646;
+  display: none;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.cat-effect {
+  position: fixed;
+  font-size: 24px;
+  z-index: 2147483647;
+  pointer-events: none;
+  animation: floatUp 1s ease-out forwards;
+}
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(1.5); }
+}
+
+/* 控制面板 */
+.cat-control-panel {
+  position: absolute;
+  bottom: 290px;
+  right: 0;
+  width: 220px;
+  background: white;
+  border: 2px solid #ffb6c1;
+  border-radius: 15px;
+  padding: 12px;
+  font-size: 13px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 2147483646;
+  display: none;
+  animation: fadeIn 0.2s ease-out;
+  color: #333;
+  font-family: sans-serif;
+}
+.cat-control-panel .panel-section {
+  margin-bottom: 10px;
+}
+.cat-control-panel .panel-section:last-child {
+  margin-bottom: 0;
+}
+.cat-control-panel .panel-title {
+  font-weight: bold;
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: #e88a9a;
+}
+.cat-control-panel .timer-display {
+  font-size: 28px;
+  font-weight: bold;
+  text-align: center;
+  color: #d46b7a;
+  font-variant-numeric: tabular-nums;
+  margin: 4px 0 8px;
+  letter-spacing: 2px;
+}
+.cat-control-panel .timer-presets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.cat-control-panel .timer-presets button {
+  flex: 1;
+  min-width: 44px;
+  padding: 5px 0;
+  border: 1.5px solid #ffb6c1;
+  border-radius: 10px;
+  background: #fff5f7;
+  color: #d46b7a;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cat-control-panel .timer-presets button:hover {
+  background: #ffb6c1;
+  color: white;
+}
+.cat-control-panel .btn-cancel,
+.cat-control-panel .btn-cancel-alarm {
+  width: 100%;
+  padding: 4px 0;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #f9f9f9;
+  color: #999;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cat-control-panel .btn-cancel:hover,
+.cat-control-panel .btn-cancel-alarm:hover {
+  background: #ffe0e0;
+  color: #d46b7a;
+  border-color: #ffb6c1;
+}
+.cat-control-panel .alarm-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.cat-control-panel .alarm-row input[type="time"] {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1.5px solid #ffb6c1;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #333;
+  outline: none;
+}
+.cat-control-panel .alarm-row input[type="time"]:focus {
+  border-color: #e88a9a;
+}
+.cat-control-panel .alarm-row button {
+  padding: 5px 12px;
+  border: 1.5px solid #ffb6c1;
+  border-radius: 10px;
+  background: #fff5f7;
+  color: #d46b7a;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.cat-control-panel .alarm-row button:hover {
+  background: #ffb6c1;
+  color: white;
+}
+.cat-control-panel .alarm-status {
+  font-size: 11px;
+  color: #e88a9a;
+  text-align: center;
+  margin-top: 4px;
+}
