@@ -6,13 +6,21 @@
   "permissions": ["storage", "tabs", "activeTab", "scripting", "alarms", "notifications"],
   "host_permissions": ["<all_urls>"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background/index.js"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "css": ["css/cat.css"]
+      "js": [
+        "content/cat-ui.js",
+        "content/state-machine.js",
+        "content/emotion-manager.js",
+        "content/ai-api.js",
+        "content/focus-timer.js",
+        "content/activity-detector.js",
+        "content/index.js"
+      ],
+      "css": ["styles/cat.css"]
     }
   ],
   "web_accessible_resources": [
