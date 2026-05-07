@@ -42,6 +42,9 @@ class CatUI {
     this.timerInterval = null;
     // 角色
     this.currentChar = 'cat';
+    // 视频
+    this.videoEl = null;
+    this.isLaughing = false;
     // 聊天
     this.chatHistory = [];
     this.isNearMouse = false;
@@ -56,6 +59,19 @@ class CatUI {
     this.bubbleEl = document.createElement('div');
     this.bubbleEl.className = 'cat-bubble';
     this.catEl.appendChild(this.bubbleEl);
+
+    // 视频层
+    this.videoEl = document.createElement('video');
+    this.videoEl.className = 'cat-video-player';
+    this.videoEl.preload = 'auto';
+    this.videoEl.muted = false;
+    this.videoEl.style.display = 'none';
+    this.videoEl.src = chrome.runtime.getURL('assets/cat/laugh.mp4');
+    this.catEl.appendChild(this.videoEl);
+    this.videoEl.onended = () => {
+      this.videoEl.style.display = 'none';
+      this.isLaughing = false;
+    };
 
     this.startIdleActions();
     this.loadCharacterPref();
@@ -112,6 +128,8 @@ class CatUI {
     // 更新角色切换按钮状态
     const btns = this.panelEl?.querySelectorAll('.char-btn');
     if (btns) btns.forEach(b => b.classList.toggle('active', b.dataset.char === name));
+    // 更新视频源
+    if (this.videoEl) this.videoEl.src = chrome.runtime.getURL(`assets/${name}/laugh.mp4`);
     if (!silent) this.showBubble(`切换成${this.charName}啦～`, 2500);
   }
 
@@ -131,6 +149,21 @@ class CatUI {
     setTimeout(() => {
       this.setSprite('idle');
     }, 1200);
+  }
+
+  playLaughVideo() {
+    this.isLaughing = true;
+    const src = chrome.runtime.getURL(`assets/${this.currentChar}/laugh.mp4`);
+    if (this.videoEl.src !== src) this.videoEl.src = src;
+    this.videoEl.style.display = 'block';
+    this.videoEl.currentTime = 0;
+    const promise = this.videoEl.play();
+    if (promise !== undefined) {
+      promise.catch(() => {
+        this.isLaughing = false;
+        this.videoEl.style.display = 'none';
+      });
+    }
   }
 
   // === 待机小动作 ===
@@ -174,7 +207,7 @@ class CatUI {
 
   startIdleActions() {
     const loop = () => {
-      if (this.currentSprite !== 'idle' && this.currentSprite !== 'attentive') {
+      if (this.isLaughing || (this.currentSprite !== 'idle' && this.currentSprite !== 'attentive')) {
         setTimeout(loop, 2000);
         return;
       }

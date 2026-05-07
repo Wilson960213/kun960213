@@ -64,10 +64,11 @@
   });
 
   // 拖拽 + 面板控制变量
-  var isDragging = false, dragDistance = 0, offsetX, offsetY, singleClickTimer;
+  var isDragging = false, dragDistance = 0, offsetX, offsetY, singleClickTimer, longPressTimer;
 
   // 双击抚摸
   catUI.catEl.addEventListener('dblclick', () => {
+    if (catUI.isLaughing) return;
     clearTimeout(singleClickTimer);
     emotionManager.addEvent('pet');
     catUI.playPetAnimation();
@@ -75,10 +76,17 @@
     getCatMessage('reward', mood, catUI.currentChar).then(msg => catUI.showBubble(msg, 3000));
   });
 
-  // 自由拖拽 + 单击面板
+  // 自由拖拽 + 单击面板 + 长按视频
   catUI.catEl.addEventListener('mousedown', (e) => {
+    if (catUI.isLaughing) return;
     isDragging = true;
     dragDistance = 0;
+    clearTimeout(longPressTimer);
+    longPressTimer = setTimeout(() => {
+      if (dragDistance < 5) {
+        catUI.playLaughVideo();
+      }
+    }, 2000);
     const rect = catUI.catEl.getBoundingClientRect();
     offsetX = e.clientX - rect.left;
     offsetY = e.clientY - rect.top;
@@ -91,12 +99,14 @@
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
     dragDistance += Math.abs(e.movementX) + Math.abs(e.movementY);
+    if (dragDistance > 5) clearTimeout(longPressTimer);
     catUI.catEl.style.left = (e.clientX - offsetX) + 'px';
     catUI.catEl.style.top = (e.clientY - offsetY) + 'px';
   });
   document.addEventListener('mouseup', (e) => {
     if (isDragging) {
       isDragging = false;
+      clearTimeout(longPressTimer);
       catUI.catEl.style.transition = 'all 0.5s ease';
       if (dragDistance < 5 && !catUI.panelEl?.contains(e.target)) {
         clearTimeout(singleClickTimer);
