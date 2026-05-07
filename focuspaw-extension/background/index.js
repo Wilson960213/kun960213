@@ -4,19 +4,19 @@ importScripts('ai-provider.js');
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch (request.action) {
     case 'getCatMessage':
-      getCatMessage(request.scene, request.mood)
+      getCatMessage(request.scene, request.mood, request.character)
         .then(msg => sendResponse({ message: msg }))
         .catch(() => sendResponse({ message: '喵~（暂时无法说话）' }));
       return true;
 
     case 'chatWithCat':
-      chatWithCat(request.history)
+      chatWithCat(request.history, request.character)
         .then(msg => sendResponse({ message: msg }))
         .catch(() => sendResponse({ message: '喵~（暂时无法说话）' }));
       return true;
 
     case 'analyzePage':
-      analyzePage(request)
+      analyzePage(request, request.character)
         .then(msg => sendResponse({ message: msg }))
         .catch(() => sendResponse({ message: '' }));
       return true;

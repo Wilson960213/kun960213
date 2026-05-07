@@ -44,7 +44,7 @@ class FocusTimer {
   async sendRewardMessage(seconds) {
     const mins = Math.floor(seconds / 60);
     const mood = this.em.getMood(); // 从情绪管理器获取当前语气
-    const message = await getCatMessage('reward', mood);
+    const message = await getCatMessage('reward', mood, this.catUI.currentChar);
     this.catUI.showBubble(`🎉 ${message}`, 5000);
     this.catUI.showEffect('🐟');
   }

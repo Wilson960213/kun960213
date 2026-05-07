@@ -308,3 +308,29 @@
   background: #ffb6c1;
   color: white;
 }
+
+/* ===== 角色切换 ===== */
+.char-selector {
+  display: flex;
+  gap: 6px;
+}
+.char-btn {
+  flex: 1;
+  padding: 6px 0;
+  border: 1.5px solid #ffb6c1;
+  border-radius: 10px;
+  background: #fff5f7;
+  color: #d46b7a;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.char-btn:hover {
+  background: #ffb6c1;
+  color: white;
+}
+.char-btn.active {
+  background: #ffb6c1;
+  color: white;
+  border-color: #e88a9a;
+}

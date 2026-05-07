@@ -1,13 +1,33 @@
 // cat-ui.js
-const CAT_SPRITES = {
-  idle: chrome.runtime.getURL('assets/cat/idle.png'),
-  attentive: chrome.runtime.getURL('assets/cat/attentive.png'),
-  remind: chrome.runtime.getURL('assets/cat/remind.png'),
-  reward: chrome.runtime.getURL('assets/cat/reward.png'),
-  pet: chrome.runtime.getURL('assets/cat/pet.png'),
-  sleep: chrome.runtime.getURL('assets/cat/sleep.png'),
-  blink: chrome.runtime.getURL('assets/cat/blink.png'),
-  walk: chrome.runtime.getURL('assets/cat/walk.png')
+const CHARACTERS = {
+  cat: {
+    name: '猫咪',
+    avatar: '🐱',
+    sprites: {
+      idle: chrome.runtime.getURL('assets/cat/idle.png'),
+      attentive: chrome.runtime.getURL('assets/cat/attentive.png'),
+      remind: chrome.runtime.getURL('assets/cat/remind.png'),
+      reward: chrome.runtime.getURL('assets/cat/reward.png'),
+      pet: chrome.runtime.getURL('assets/cat/pet.png'),
+      sleep: chrome.runtime.getURL('assets/cat/sleep.png'),
+      blink: chrome.runtime.getURL('assets/cat/blink.png'),
+      walk: chrome.runtime.getURL('assets/cat/walk.png')
+    }
+  },
+  nalong: {
+    name: '奶龙',
+    avatar: '🐉',
+    sprites: {
+      idle: chrome.runtime.getURL('assets/nalong/idle1.png'),
+      attentive: chrome.runtime.getURL('assets/nalong/attentive1.png'),
+      remind: chrome.runtime.getURL('assets/nalong/remind1.png'),
+      reward: chrome.runtime.getURL('assets/nalong/reward1.png'),
+      sleep: chrome.runtime.getURL('assets/nalong/sleep1.png'),
+      pet: chrome.runtime.getURL('assets/nalong/idle1.png'),
+      blink: chrome.runtime.getURL('assets/nalong/idle1.png'),
+      walk: chrome.runtime.getURL('assets/nalong/idle1.png')
+    }
+  }
 };
 
 class CatUI {
@@ -20,6 +40,8 @@ class CatUI {
     this.panelEl = null;
     this.panelVisible = false;
     this.timerInterval = null;
+    // 角色
+    this.currentChar = 'cat';
     // 聊天
     this.chatHistory = [];
     this.isNearMouse = false;
@@ -28,7 +50,7 @@ class CatUI {
   init() {
     this.catEl = document.createElement('div');
     this.catEl.id = 'focuspaw-cat';
-    this.catEl.style.backgroundImage = `url(${CAT_SPRITES.idle})`;
+    this.applySprite('idle');
     document.body.appendChild(this.catEl);
 
     this.bubbleEl = document.createElement('div');
@@ -36,11 +58,24 @@ class CatUI {
     this.catEl.appendChild(this.bubbleEl);
 
     this.startIdleActions();
+    this.loadCharacterPref();
   }
 
-  setSprite(state) {
-    if (this.catEl && CAT_SPRITES[state]) {
-      this.catEl.style.backgroundImage = `url(${CAT_SPRITES[state]})`;
+  get sprites() {
+    return CHARACTERS[this.currentChar].sprites;
+  }
+
+  get charName() {
+    return CHARACTERS[this.currentChar].name;
+  }
+
+  get charAvatar() {
+    return CHARACTERS[this.currentChar].avatar;
+  }
+
+  applySprite(state) {
+    if (this.catEl && this.sprites[state]) {
+      this.catEl.style.backgroundImage = `url(${this.sprites[state]})`;
       this.currentSprite = state;
       if (state === 'sleep') {
         this.catEl.classList.add('cat-sleep-breathe');
@@ -48,6 +83,36 @@ class CatUI {
         this.catEl.classList.remove('cat-sleep-breathe');
       }
     }
+  }
+
+  setSprite(state) {
+    this.applySprite(state);
+  }
+
+  loadCharacterPref() {
+    chrome.storage.local.get(['focuspawCharacter'], (result) => {
+      if (result.focuspawCharacter && CHARACTERS[result.focuspawCharacter]) {
+        this.switchCharacter(result.focuspawCharacter, true);
+      }
+    });
+  }
+
+  switchCharacter(name, silent = false) {
+    if (!CHARACTERS[name] || name === this.currentChar) return;
+    this.currentChar = name;
+    this.applySprite('idle');
+    chrome.storage.local.set({ focuspawCharacter: name });
+    // 更新气泡中的头像
+    document.querySelectorAll('.chat-avatar').forEach(el => {
+      el.textContent = this.charAvatar;
+    });
+    // 更新面板标题
+    const title = this.panelEl?.querySelector('#chat-section-title');
+    if (title) title.textContent = `💬 和${this.charName}聊天`;
+    // 更新角色切换按钮状态
+    const btns = this.panelEl?.querySelectorAll('.char-btn');
+    if (btns) btns.forEach(b => b.classList.toggle('active', b.dataset.char === name));
+    if (!silent) this.showBubble(`切换成${this.charName}啦～`, 2500);
   }
 
   showBubble(text, duration = 4000) {
@@ -175,7 +240,14 @@ class CatUI {
         <div class="alarm-status" id="focus-alarm-status"></div>
       </div>
       <div class="panel-section">
-        <div class="panel-title">💬 和猫咪聊天</div>
+        <div class="panel-title">🎭 角色</div>
+        <div class="char-selector">
+          <button class="char-btn active" data-char="cat">🐱 猫咪</button>
+          <button class="char-btn" data-char="nalong">🐉 奶龙</button>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title" id="chat-section-title">💬 和${this.charName}聊天</div>
         <div class="chat-messages"></div>
         <div class="chat-input-row">
           <input type="text" id="chat-input" placeholder="和猫咪说说话...">
@@ -205,6 +277,11 @@ class CatUI {
     this.panelEl.querySelector('#focus-alarm-cancel').addEventListener('click', () => {
       chrome.runtime.sendMessage({ action: 'cancelAlarm' });
       this.updateAlarmStatus('');
+    });
+
+    // 角色切换
+    this.panelEl.querySelectorAll('.char-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.switchCharacter(btn.dataset.char));
     });
 
     this.catEl.appendChild(this.panelEl);
@@ -271,7 +348,7 @@ class CatUI {
     this.chatHistory.push({ role: 'user', text });
 
     this.showBubble('(思索中...)', 3000);
-    chatWithCat(this.chatHistory).then((reply) => {
+    chatWithCat(this.chatHistory, this.currentChar).then((reply) => {
       const replyText = reply || '喵？';
       this.addChatMessage('cat', replyText);
       this.chatHistory.push({ role: 'cat', text: replyText });
@@ -297,7 +374,7 @@ class CatUI {
     if (role === 'cat') {
       const avatar = document.createElement('span');
       avatar.className = 'chat-avatar';
-      avatar.textContent = '🐱';
+      avatar.textContent = this.charAvatar;
       row.appendChild(avatar);
     }
     row.appendChild(bubble);

@@ -29,7 +29,7 @@
     if (pageCommented) return;
     pageCommented = true;
     const pageData = extractPageContent();
-    const comment = await analyzePage(pageData);
+    const comment = await analyzePage(pageData, catUI.currentChar);
     if (comment) catUI.showBubble(comment, 8000);
   }
 
@@ -72,7 +72,7 @@
     emotionManager.addEvent('pet');
     catUI.playPetAnimation();
     const mood = emotionManager.getMood();
-    getCatMessage('reward', mood).then(msg => catUI.showBubble(msg, 3000));
+    getCatMessage('reward', mood, catUI.currentChar).then(msg => catUI.showBubble(msg, 3000));
   });
 
   // 自由拖拽 + 单击面板
